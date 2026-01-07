@@ -1,0 +1,30 @@
+{
+  "name": "nodejs-advanced-j5",
+  "version": "1.0.0",
+  "description": "Node.js Advanced - Day 5: Redis & Performances",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "benchmark": "node scripts/benchmark.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-redis": "^7.1.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "ioredis": "^5.9.0",
+    "passport": "^0.6.0",
+    "passport-local": "^1.0.0",
+    "reflect-metadata": "^0.1.14",
+    "socket.io": "^4.8.3",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.28"
+  },
+  "devDependencies": {
+    "autocannon": "^7.15.0",
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+<h1>Connexion</h1>
+
+<form id="loginForm">
+    <label>Username :</label>
+    <input type="text" name="username" required><br><br>
+
+    <label>Password :</label>
+    <input type="password" name="password" required><br><br>
+
+    <button type="submit">Se connecter</button>
+</form>
+
+<p id="result"></p>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+
+    const res = await fetch("/login", {
+        method: "POST",
+        credentials: "include", // IMPORTANT : envoie les cookies
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    const json = await res.json();
+    document.getElementById("result").textContent = json.message || JSON.stringify(json);
+
+    if (res.ok) {
+        // Une fois connecté → redirection vers le client Socket.IO
+        window.location.href = "/client-test.html";
+    }
+});
+</script>
+
+</body>
+</html>
