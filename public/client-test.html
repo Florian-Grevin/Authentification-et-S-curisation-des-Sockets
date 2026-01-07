@@ -3,52 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <title>Test Socket.IO</title>
-<!-- Import de la librairie Client Socket.IO -->
-<script
-src="https://cdn.socket.io/4.5.4/socket.io.min.js">
-</script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <style>
 body { font-family: sans-serif; padding: 20px; }
-.log { background: #f4f4f4; border: 1px solid #ddd; padding: 10px; height: 300px;
-overflow-y: scroll; }
+.log { background: #f4f4f4; border: 1px solid #ddd; padding: 10px; height: 300px; overflow-y: scroll; }
 </style>
 </head>
 <body>
+
 <h1>Console Client Socket.IO</h1>
+
 <button onclick="sendPing()">Envoyer PING</button>
+<button onclick="sendChat()">💬 Parler dans General</button>
+
 <div id="logs" class="log"></div>
+
 <script>
-// Connexion au serveur
 const socket = io('http://localhost:3000', {
     withCredentials: true
 });
 
-//console.log("Cookies envoyés :", document.cookie);
-
 const logDiv = document.getElementById('logs');
+
+// ✅ Fonction manquante — la voici !
 function addLog(message) {
-const p = document.createElement('p');
-p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-logDiv.appendChild(p);
+    const p = document.createElement('p');
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    logDiv.appendChild(p);
 }
+
 socket.on('connect', () => {
-addLog(`Connecté au serveur avec l'ID : ${socket.id}`);
+    addLog(`Connecté au serveur avec l'ID : ${socket.id}`);
 });
 
 socket.on("connect_error", (err) => {
     addLog("User not connected : " + err.message);
 });
 
-
-socket.on('broadcast_msg', (data) => {
-    addLog(`Broadcast : ${data.message}`);
+// Chat général
+socket.on('new_message', (data) => {
+    addLog(`[${data.from}] : ${data.content}`);
 });
 
-// Fonction déclenchée par le bouton
+// Notifications privées
+socket.on('notification', (data) => {
+    addLog(`[PRIVÉ] ${data.from} : ${data.text}`);
+    alert(`Notification reçue : ${data.text}`);
+});
+
+
+// Ping
 function sendPing() {
-addLog('Envoi de "ping"...');
-socket.emit('my_ping', { text: 'Hello Server!' });
+    addLog('Envoi de "ping"...');
+    socket.emit('my_ping', { text: 'Hello Server!' });
+}
+
+// Chat général
+function sendChat() {
+    const text = prompt("Votre message pour le groupe General :");
+    if (text) {
+        socket.emit('chat_message', { content: text });
+    }
 }
 </script>
+
 </body>
 </html>

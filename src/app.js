@@ -81,25 +81,54 @@ io.use((socket, next) => {
         next(new Error("Unauthorized: Veuillez vous connecter"));
     }
 });
-
 // --- SOCKET.IO : Connexion authentifiée ---
 io.on('connection', (socket) => {
+    // 1. Récupération sécurisée (faite au TP 2)
     const user = socket.request.user;
+    console.log(` Client connecté : ${socket.id} (${user.username})`);
 
-    console.log(`Utilisateur identifié : ${user.username} (ID: ${user.id}) connecté via ${socket.id}`);
+    // 2. REJOINDRE LA ROOM PRIVÉE "User Room"
+    socket.join(`user:${user.id}`);
+    console.log(` ${user.username} a rejoint son canal privé user:${user.id}`);
 
-    socket.on('my_ping', (data) => {
-        console.log("Ping reçu :", data);
+    // 3. REJOINDRE LA ROOM PUBLIQUE "General"
+    socket.join('general');
+    console.log(` ${user.username} a rejoint la salle General`);
 
-        io.emit('broadcast_msg', {
-            message: `${user.username} a pingué !`
+    // 4. Écoute des messages venant du client (CHAT GENERAL)
+    socket.on('chat_message', (data) => {
+        console.log(`Message reçu de ${user.username} : ${data.content}`);
+
+        // Diffusion à TOUS les gens dans la room 'general'
+        io.to('general').emit('new_message', {
+            from: user.username,
+            content: data.content,
+            time: new Date().toLocaleTimeString()
         });
     });
 
+    // 5. Déconnexion
     socket.on('disconnect', () => {
         console.log(`Utilisateur ${user.username} déconnecté`);
     });
 });
+
+
+app.post('/api/admin/notify/:userId', (req, res) => {
+    const targetUserId = req.params.userId;
+    const { message } = req.body;
+
+    console.log(`📨 Envoi d'une notification à user:${targetUserId} → "${message}"`);
+
+    io.to(`user:${targetUserId}`).emit('notification', {
+        type: 'private',
+        text: message,
+        from: 'System Admin'
+    });
+
+    res.json({ status: 'Notification envoyée', target: targetUserId });
+});
+
 
 // --- Lancement du serveur ---
 const PORT = process.env.PORT || 3000;
