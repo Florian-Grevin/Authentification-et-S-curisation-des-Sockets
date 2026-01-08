@@ -2,33 +2,33 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>Register</title>
 </head>
 <body>
-<h1>Connexion</h1>
+<h1>Créer un compte</h1>
 <a href="/client-test.html">⬅ Retour au client Socket.IO</a>
-<form id="loginForm">
+<form id="registerForm">
     <label>Username :</label>
     <input type="text" name="username" required><br><br>
 
     <label>Password :</label>
     <input type="password" name="password" required><br><br>
 
-    <button type="submit">Se connecter</button>
+    <button type="submit">S'inscrire</button>
 </form>
 
 <p id="result"></p>
 
 <script>
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
-    const res = await fetch("/login", {
+    const res = await fetch("/register", {
         method: "POST",
-        credentials: "include", // IMPORTANT : envoie les cookies
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
     });
@@ -37,8 +37,8 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     document.getElementById("result").textContent = json.message || JSON.stringify(json);
 
     if (res.ok) {
-        // Une fois connecté → redirection vers le client Socket.IO
-        window.location.href = "/client-test.html";
+        // Une fois inscrit → redirection vers la page login
+        window.location.href = "/login.html";
     }
 });
 </script>

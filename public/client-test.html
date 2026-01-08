@@ -7,9 +7,17 @@
 <style>
 body { font-family: sans-serif; padding: 20px; }
 .log { background: #f4f4f4; border: 1px solid #ddd; padding: 10px; height: 300px; overflow-y: scroll; }
+nav a { margin-right: 15px; }
 </style>
 </head>
 <body>
+
+<!-- 🔗 Barre de navigation simple -->
+<nav>
+    <a href="/login.html">Connexion</a>
+    <a href="/register.html">Inscription</a>
+    <a href="#" onclick="logout()">Déconnexion</a>
+</nav>
 
 <h1>Console Client Socket.IO</h1>
 
@@ -25,12 +33,29 @@ const socket = io('http://localhost:3000', {
 
 const logDiv = document.getElementById('logs');
 
-// ✅ Fonction manquante — la voici !
 function addLog(message) {
     const p = document.createElement('p');
     p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
     logDiv.appendChild(p);
 }
+
+window.addEventListener('load', async () => {
+    try {
+        const response = await fetch('/api/messages/general', {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        const messages = await response.json();
+
+        messages.forEach(msg => {
+            addLog(`[${msg.sender?.username ?? "??"}] : ${msg.content}`);
+        });
+    } catch (err) {
+        console.error("Erreur fetch:", err);
+        addLog("Impossible de charger l'historique.");
+    }
+});
 
 socket.on('connect', () => {
     addLog(`Connecté au serveur avec l'ID : ${socket.id}`);
@@ -40,30 +65,37 @@ socket.on("connect_error", (err) => {
     addLog("User not connected : " + err.message);
 });
 
-// Chat général
 socket.on('new_message', (data) => {
     addLog(`[${data.from}] : ${data.content}`);
 });
 
 socket.on('notification', (data) => {
-    //console.log("Notification brute reçue :", data);
     addLog(`[PRIVÉ] ${data.from} : ${data.text}`);
-    //alert(`Notification reçue : ${data.text}`);
+});
+
+socket.on('my_pong', (data) => {
+    addLog(`PONG reçu : ${data.text}`);
 });
 
 
+// 🔥 Déconnexion
+async function logout() {
+    await fetch('/logout', {
+        method: 'POST',
+        credentials: 'include'
+    });
+    window.location.reload();
+}
 
-// Ping
 function sendPing() {
     addLog('Envoi de "ping"...');
     socket.emit('my_ping', { text: 'Hello Server!' });
 }
 
-// Chat général
 function sendChat() {
-    const text = prompt("Votre message pour le groupe General :");
+    const text = prompt("Votre message :");
     if (text) {
-        socket.emit('chat_message', { content: text });
+        socket.emit('send_message', { content: text });
     }
 }
 </script>

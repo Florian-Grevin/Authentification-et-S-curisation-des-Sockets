@@ -32,9 +32,15 @@ app.use(express.json());
 app.use(cookieParser());
 
 // --- Base de données ---
+// On force TypeORM à connaître nos deux entités : User (déjà là) et Message (nouveau)
+AppDataSource.setOptions({ entities: [require('./entities/User'), require('./entities/Message')]
+});
+
 AppDataSource.initialize()
     .then(() => console.log('Database connected (SQLite)'))
     .catch((err) => console.error('Database connection error:', err));
+
+const messageRepository = AppDataSource.getRepository('Message');
 
 // --- SESSION : refactor pour TP2 ---
 const sessionMiddleware = session({
@@ -83,6 +89,16 @@ io.use((socket, next) => {
 });
 // --- SOCKET.IO : Connexion authentifiée ---
 io.on('connection', (socket) => {
+    // 0. Ping Pong
+    socket.on('my_ping', (data) => {
+        console.log(`PING reçu de ${user.username} :`, data);
+
+        socket.emit('my_pong', {
+            text: "Pong !",
+            time: new Date().toLocaleTimeString()
+        });
+    });
+
     // 1. Récupération sécurisée (faite au TP 2)
     const user = socket.request.user;
     console.log(` Client connecté : ${socket.id} (${user.username})`);
@@ -96,21 +112,54 @@ io.on('connection', (socket) => {
     console.log(` ${user.username} a rejoint la salle General`);
 
     // 4. Écoute des messages venant du client (CHAT GENERAL)
-    socket.on('chat_message', (data) => {
-        console.log(`Message reçu de ${user.username} : ${data.content}`);
-
-        // Diffusion à TOUS les gens dans la room 'general'
+    // Notez le mot clé 'async' car on va parler à la DB
+    socket.on('send_message', async (data) => {
+        try {
+            console.log(` Message reçu de ${user.username} :`, data.content);
+        // 1. Validation basique
+        if (!data.content || data.content.trim() === "") return;
+        // 2. Préparation de la sauvegarde
+            const newMessage = messageRepository.create({
+            content: data.content,
+            room: 'general',
+            sender: user // On attache l'objet User complet récupéré de la session
+        });
+        // 3. Sauvegarde en Base de Données (c'est ici que ça devient persistant)
+        await messageRepository.save(newMessage);
+        console.log(`Message sauvegardé (ID: ${newMessage.id})`);
+        // 4. Diffusion UNIQUEMENT si la sauvegarde a réussi
+        // On renvoie aussi la vraie date de création (createdAt) générée par la DB
         io.to('general').emit('new_message', {
             from: user.username,
-            content: data.content,
-            time: new Date().toLocaleTimeString()
+            content: newMessage.content,
+            time: newMessage.createdAt
         });
+        } catch (error) {
+            console.error('Erreur sauvegarde message:', error);
+            // Optionnel : Envoyer une erreur au client
+            socket.emit('error', { message: "Impossible d'envoyer votre message." });
+        }
     });
 
     // 5. Déconnexion
     socket.on('disconnect', () => {
         console.log(`Utilisateur ${user.username} déconnecté`);
     });
+});
+
+app.get('/api/messages/general', async (req, res) => {
+    try {
+        const messages = await messageRepository.find({
+            where: { room: 'general' },
+            order: { createdAt: 'DESC' },
+            take: 50
+        });
+
+        res.json(messages);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Erreur lors de la récupération des messages" });
+    }
 });
 
 
