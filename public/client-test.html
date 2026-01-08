@@ -45,11 +45,12 @@ socket.on('new_message', (data) => {
     addLog(`[${data.from}] : ${data.content}`);
 });
 
-// Notifications privées
 socket.on('notification', (data) => {
+    //console.log("Notification brute reçue :", data);
     addLog(`[PRIVÉ] ${data.from} : ${data.text}`);
-    alert(`Notification reçue : ${data.text}`);
+    //alert(`Notification reçue : ${data.text}`);
 });
+
 
 
 // Ping
