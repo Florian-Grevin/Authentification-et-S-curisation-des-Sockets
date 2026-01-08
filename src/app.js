@@ -15,6 +15,8 @@ const AppDataSource = require('./config/db');
 const authRoutes = require('./routes/auth.routes');
 const statsRoutes = require('./routes/stats.routes');
 
+const productService = require('./services/product.service');
+
 const app = express();
 const httpServer = http.createServer(app);
 
@@ -33,7 +35,7 @@ app.use(cookieParser());
 
 // --- Base de données ---
 // On force TypeORM à connaître nos deux entités : User (déjà là) et Message (nouveau)
-AppDataSource.setOptions({ entities: [require('./entities/User'), require('./entities/Message')]
+AppDataSource.setOptions({ entities: [require('./entities/User'), require('./entities/Message'), require('./entities/Product') ]
 });
 
 AppDataSource.initialize()
@@ -176,6 +178,21 @@ app.post('/api/admin/notify/:userId', (req, res) => {
     });
 
     res.json({ status: 'Notification envoyée', target: targetUserId });
+});
+
+
+
+app.get('/products/export', async (req, res) => {
+    try {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="products.csv"');
+
+        await productService.exportProducts(res);
+
+    } catch (err) {
+        console.error("❌ Erreur export CSV :", err);
+        res.status(500).send("Erreur lors de l'export des produits");
+    }
 });
 
 
