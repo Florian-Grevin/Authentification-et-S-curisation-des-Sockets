@@ -20,6 +20,7 @@
     "ioredis": "^5.9.0",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
+    "puppeteer": "^24.34.0",
     "reflect-metadata": "^0.1.14",
     "socket.io": "^4.8.3",
     "sqlite3": "^5.1.7",
